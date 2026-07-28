@@ -67,10 +67,9 @@ final class GradientPngWriter implements WriterInterface
                 $colorInfo = imagecolorsforindex($image, $colorIndex);
 
                 if (
-                    $colorInfo['red'] === 0 &&
-                    $colorInfo['green'] === 0 &&
-                    $colorInfo['blue'] === 0 &&
-                    $colorInfo['alpha'] === 0
+                    $colorInfo['red'] < 50 &&
+                    $colorInfo['green'] < 50 &&
+                    $colorInfo['blue'] < 50
                 ) {
                     imagesetpixel($image, $y, $x, $gradientColor);
                 }
