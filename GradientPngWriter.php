@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Service\QrCode;
+namespace Vlr\QrCodeGradient;
 
 use Endroid\QrCode\Color\ColorInterface;
 use Endroid\QrCode\QrCodeInterface;
