@@ -6,22 +6,19 @@ use Endroid\QrCode\Color\ColorInterface;
 use Endroid\QrCode\QrCodeInterface;
 use Endroid\QrCode\Logo\LogoInterface;
 use Endroid\QrCode\Label\LabelInterface;
-use Endroid\QrCode\Writer\PngWriter;
 use Endroid\QrCode\Writer\Result\PngResult;
 use Endroid\QrCode\Writer\Result\ResultInterface;
 use Endroid\QrCode\Writer\WriterInterface;
 
-final class GradientPngWriter implements WriterInterface
+final class GradientWriter implements WriterInterface
 {
-    private PngWriter $baseWriter;
 
     public function __construct(
+        private WriterInterface $baseWriter,
         private ColorInterface $startColor,
         private ColorInterface $endColor,
         private ?ColorInterface $middleColor = null
-    ) {
-        $this->baseWriter = new PngWriter();
-    }
+    ) {}
 
     #[Override]
     public function write(
