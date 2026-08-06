@@ -6,12 +6,11 @@ use Endroid\QrCode\Color\ColorInterface;
 use Endroid\QrCode\Writer\Result\PngResult;
 use Endroid\QrCode\Writer\Result\ResultInterface;
 use Override;
+use Vlr\QrCodeGradient\Renderer\GradientRendererInterface;
 
-final class GradientPngWriter extends GradientAbstract implements GradientWriterInterface
+final class GradientPngWriter implements GradientWriterInterface
 {
-
-    public function __construct() {}
-
+    public function __construct(private GradientRendererInterface $renderer) {}
 
     #[Override]
     public function writeGradient(
@@ -21,50 +20,32 @@ final class GradientPngWriter extends GradientAbstract implements GradientWriter
         ResultInterface $result
     ): ResultInterface {
 
-        $image = imagecreatefromstring($result->getString());
-        imagepalettetotruecolor($image);
-
-        $width = imagesx($image);
-        $height = imagesy($image);
-        $halfHeight = $height / 2;
-
-        for ($y = 0; $y < $height; $y++) {
-
-            if ($middleColor !== null) {
-                if ($y < $halfHeight) {
-                    $ratio = $y / $halfHeight;
-                    $red = $this->interpolate($startColor->getRed(), $middleColor->getRed(), $ratio);
-                    $green = $this->interpolate($startColor->getGreen(), $middleColor->getGreen(), $ratio);
-                    $blue = $this->interpolate($startColor->getBlue(), $middleColor->getBlue(), $ratio);
-                } else {
-                    $ratio = ($y - $halfHeight) / $halfHeight;
-                    $red = $this->interpolate($middleColor->getRed(), $endColor->getRed(), $ratio);
-                    $green = $this->interpolate($middleColor->getGreen(), $endColor->getGreen(), $ratio);
-                    $blue = $this->interpolate($middleColor->getBlue(), $endColor->getBlue(), $ratio);
-                }
-            } else {
-                $ratio = $y / $height;
-                $red = $this->interpolate($startColor->getRed(), $endColor->getRed(), $ratio);
-                $green = $this->interpolate($startColor->getGreen(), $endColor->getGreen(), $ratio);
-                $blue = $this->interpolate($startColor->getBlue(), $endColor->getBlue(), $ratio);
-            }
-
-            $gradientColor = imagecolorallocate($image, $red, $green, $blue);
-
-            for ($x = 0; $x < $width; $x++) {
-                $colorIndex = imagecolorat($image, $y, $x);
-                $colorInfo = imagecolorsforindex($image, $colorIndex);
-
-                if (
-                    $colorInfo['red'] < 50 &&
-                    $colorInfo['green'] < 50 &&
-                    $colorInfo['blue'] < 50
-                ) {
-                    imagesetpixel($image, $y, $x, $gradientColor);
-                }
-            }
+        if (!$result instanceof PngResult) {
+            
+            throw new \InvalidArgumentException('GradientPngWriter supports only PngResult.');
         }
 
-        return new PngResult($result->getMatrix(), $image);
+        $sourceQrResource = imagecreatefromstring($result->getString());
+
+        if (!$sourceQrResource) {
+
+            throw new \RuntimeException('Invalid QR code image data.');
+        }
+        imagepalettetotruecolor($sourceQrResource);
+
+        $width = imagesx($sourceQrResource);
+        $height = imagesy($sourceQrResource);
+
+        $gradientResource = $this->renderer->createGradientImage(
+            $width,
+            $height,
+            $startColor,
+            $endColor,
+            $middleColor
+        );
+
+        $finalImageResource = $this->renderer->applyMask($sourceQrResource, $gradientResource);
+
+        return new PngResult($result->getMatrix(), $finalImageResource);
     }
 }
